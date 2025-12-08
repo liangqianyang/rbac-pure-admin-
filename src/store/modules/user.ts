@@ -11,7 +11,8 @@ import {
   type UserResult,
   type RefreshTokenResult,
   getLogin,
-  refreshTokenApi
+  refreshTokenApi,
+  logout as logoutApi
 } from "@/api/user";
 import { useMultiTagsStoreHook } from "./multiTags";
 import { type DataInfo, setToken, removeToken, userKey } from "@/utils/auth";
@@ -64,7 +65,7 @@ export const useUserStore = defineStore("pure-user", {
       this.loginDay = Number(value);
     },
     /** 登入 */
-    async loginByUsername(data) {
+    async loginByUsername(data: { email: string; password: string }) {
       return new Promise<UserResult>((resolve, reject) => {
         getLogin(data)
           .then(data => {
@@ -76,8 +77,13 @@ export const useUserStore = defineStore("pure-user", {
           });
       });
     },
-    /** 前端登出（不调用接口） */
-    logOut() {
+    /** 前端登出（调用后端接口） */
+    async logOut() {
+      try {
+        await logoutApi();
+      } catch (error) {
+        console.error("登出接口调用失败:", error);
+      }
       this.username = "";
       this.roles = [];
       this.permissions = [];
@@ -87,7 +93,7 @@ export const useUserStore = defineStore("pure-user", {
       router.push("/login");
     },
     /** 刷新`token` */
-    async handRefreshToken(data) {
+    async handRefreshToken(data: { refreshToken: string }) {
       return new Promise<RefreshTokenResult>((resolve, reject) => {
         refreshTokenApi(data)
           .then(data => {

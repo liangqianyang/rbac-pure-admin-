@@ -10,11 +10,19 @@ import type {
   PureHttpRequestConfig
 } from "./types.d";
 import { stringify } from "qs";
-import { getToken, formatToken } from "@/utils/auth";
+import { getToken, formatToken, removeToken } from "@/utils/auth";
 import { useUserStoreHook } from "@/store/modules/user";
+import { message } from "@/utils/message";
+
+// 获取环境变量中的API地址
+// 开发环境使用代理，生产环境使用完整URL
+const isDev = import.meta.env.DEV;
+const baseURL = isDev ? "" : import.meta.env.VITE_API_URL || "";
 
 // 相关配置请参考：www.axios-js.com/zh-cn/docs/#axios-request-config-1
 const defaultConfig: AxiosRequestConfig = {
+  // API基础地址
+  baseURL,
   // 请求超时时间
   timeout: 10000,
   headers: {
@@ -70,7 +78,7 @@ class PureHttp {
           return config;
         }
         /** 请求白名单，放置一些不需要`token`的接口（通过设置请求白名单，防止`token`过期后再请求造成的死循环问题） */
-        const whiteList = ["/refresh-token", "/login"];
+        const whiteList = ["/api/auth/refresh", "/api/auth/login"];
         return whiteList.some(url => config.url.endsWith(url))
           ? config
           : new Promise(resolve => {
@@ -132,6 +140,40 @@ class PureHttp {
       (error: PureHttpError) => {
         const $error = error;
         $error.isCancelRequest = Axios.isCancel($error);
+
+        // 处理 401 未授权错误
+        if (error.response?.status === 401) {
+          const errorMsg =
+            error.response?.data?.message ||
+            error.response?.data?.error ||
+            "登录已过期，请重新登录";
+          message(errorMsg, { type: "error" });
+          // 清除token并跳转到登录页
+          removeToken();
+          // 动态导入 router 避免循环依赖
+          import("@/router").then(({ router }) => {
+            router.push("/login");
+          });
+          return Promise.reject(error);
+        }
+
+        // 处理 403 禁止访问错误
+        if (error.response?.status === 403) {
+          const errorMsg =
+            error.response?.data?.message ||
+            error.response?.data?.error ||
+            "无权限访问";
+          message(errorMsg, { type: "error" });
+          return Promise.reject(error);
+        }
+
+        // 处理其他错误
+        if (error.response?.data?.error) {
+          message(error.response.data.error, { type: "error" });
+        } else if (error.response?.data?.message) {
+          message(error.response.data.message, { type: "error" });
+        }
+
         // 所有的响应异常 区分来源为取消请求/非取消请求
         return Promise.reject($error);
       }
