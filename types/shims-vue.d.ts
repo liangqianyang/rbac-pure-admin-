@@ -9,3 +9,10 @@ declare module "*.scss" {
   const scss: Record<string, string>;
   export default scss;
 }
+
+// unplugin-icons 图标组件类型声明
+declare module "~icons/*" {
+  import type { FunctionalComponent, SVGAttributes } from "vue";
+  const component: FunctionalComponent<SVGAttributes>;
+  export default component;
+}
