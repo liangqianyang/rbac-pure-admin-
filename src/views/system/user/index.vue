@@ -26,6 +26,8 @@ const {
   columns,
   dataList,
   pagination,
+  previewVisible,
+  previewUrl,
   onSearch,
   resetForm,
   openDialog,
@@ -46,20 +48,31 @@ const {
       :model="form"
       class="search-form bg-bg_color w-[99/100] pl-8 pt-3 overflow-auto"
     >
-      <el-form-item label="用户名称：" prop="username">
+      <el-form-item label="用户名：" prop="username">
         <el-input
           v-model="form.username"
-          placeholder="请输入用户名称"
+          placeholder="请输入用户名"
           clearable
           class="w-[180px]!"
+          @keyup.enter="onSearch"
         />
       </el-form-item>
-      <el-form-item label="手机号码：" prop="phone">
+      <el-form-item label="邮箱：" prop="email">
         <el-input
-          v-model="form.phone"
-          placeholder="请输入手机号码"
+          v-model="form.email"
+          placeholder="请输入邮箱"
           clearable
           class="w-[180px]!"
+          @keyup.enter="onSearch"
+        />
+      </el-form-item>
+      <el-form-item label="手机号：" prop="phone">
+        <el-input
+          v-model="form.phone"
+          placeholder="请输入手机号"
+          clearable
+          class="w-[180px]!"
+          @keyup.enter="onSearch"
         />
       </el-form-item>
       <el-form-item label="状态：" prop="status">
@@ -67,7 +80,7 @@ const {
           v-model="form.status"
           placeholder="请选择"
           clearable
-          class="w-[180px]!"
+          class="w-[120px]!"
         >
           <el-option label="已启用" :value="1" />
           <el-option label="已停用" :value="0" />
@@ -183,6 +196,17 @@ const {
         </pure-table>
       </template>
     </PureTableBar>
+
+    <!-- 头像预览对话框 -->
+    <el-dialog v-model="previewVisible" title="头像预览" width="400px">
+      <div class="flex justify-center">
+        <el-image
+          :src="previewUrl"
+          fit="contain"
+          style="max-width: 100%; max-height: 400px"
+        />
+      </div>
+    </el-dialog>
   </div>
 </template>
 

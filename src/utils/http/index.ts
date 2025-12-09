@@ -48,6 +48,9 @@ class PureHttp {
   /** 防止重复刷新`token` */
   private static isRefreshing = false;
 
+  /** 提前刷新token的时间（毫秒），设置为5分钟 */
+  private static readonly REFRESH_BEFORE_EXPIRE = 5 * 60 * 1000;
+
   /** 初始化配置对象 */
   private static initConfig: PureHttpRequestConfig = {};
 
@@ -62,6 +65,13 @@ class PureHttp {
         resolve(config);
       });
     });
+  }
+
+  /** 检查token是否需要刷新（过期或即将过期） */
+  private static shouldRefreshToken(expires: number): boolean {
+    const now = new Date().getTime();
+    // token已过期或者将在REFRESH_BEFORE_EXPIRE时间内过期
+    return expires - now <= PureHttp.REFRESH_BEFORE_EXPIRE;
   }
 
   /** 请求拦截 */
@@ -84,12 +94,13 @@ class PureHttp {
           : new Promise(resolve => {
               const data = getToken();
               if (data) {
-                const now = new Date().getTime();
-                const expired = parseInt(data.expires) - now <= 0;
-                if (expired) {
+                const expires = parseInt(data.expires);
+                const needRefresh = PureHttp.shouldRefreshToken(expires);
+
+                if (needRefresh) {
                   if (!PureHttp.isRefreshing) {
                     PureHttp.isRefreshing = true;
-                    // token过期刷新
+                    // token过期或即将过期，刷新token
                     useUserStoreHook()
                       .handRefreshToken({ refreshToken: data.refreshToken })
                       .then(res => {

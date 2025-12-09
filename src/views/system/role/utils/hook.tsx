@@ -7,7 +7,7 @@ import {
   deleteRole,
   getRoleMenuIds,
   assignRoleMenus,
-  getMenuList
+  getPermissionsGrouped
 } from "@/api/system";
 import { ElMessageBox } from "element-plus";
 import type { PaginationProps } from "@pureadmin/table";
@@ -16,13 +16,11 @@ import type { FormItemProps, MenuFormItemProps } from "./types";
 import editForm from "../form.vue";
 import menuForm from "../menu.vue";
 import { addDialog } from "@/components/ReDialog";
-import { handleTree } from "@/utils/tree";
 
 export function useRole() {
   const form = reactive({
-    name: "",
-    code: "",
-    status: ""
+    search: "",
+    is_active: null as boolean | null
   });
   const dataList = ref([]);
   const loading = ref(true);
@@ -43,33 +41,33 @@ export function useRole() {
       reserveSelection: true
     },
     {
-      label: "角色编号",
+      label: "ID",
       prop: "id",
       width: 100
     },
     {
-      label: "角色名称",
+      label: "角色标识",
       prop: "name",
       minWidth: 120
     },
     {
-      label: "角色标识",
-      prop: "code",
+      label: "角色名称",
+      prop: "display_name",
       minWidth: 120
     },
     {
       label: "状态",
-      prop: "status",
+      prop: "is_active",
       width: 100,
       cellRenderer: ({ row }) => (
-        <el-tag type={row.status === 1 ? "success" : "danger"}>
-          {row.status === 1 ? "已启用" : "已停用"}
+        <el-tag type={row.is_active ? "success" : "danger"}>
+          {row.is_active ? "已启用" : "已停用"}
         </el-tag>
       )
     },
     {
-      label: "备注",
-      prop: "remark",
+      label: "描述",
+      prop: "description",
       minWidth: 160
     },
     {
@@ -86,12 +84,6 @@ export function useRole() {
       slot: "operation"
     }
   ];
-
-  async function _handleStatusChange(row: any) {
-    const { id, status } = row;
-    await updateRole({ id, status });
-    message(`已${status === 1 ? "启用" : "停用"}该角色`, { type: "success" });
-  }
 
   function handleSelectionChange(val: any[]) {
     selectedIds.value = val.map(item => item.id);
@@ -126,10 +118,10 @@ export function useRole() {
         formInline: {
           isAdd: title === "新增",
           id: row?.id ?? undefined,
+          display_name: row?.display_name ?? "",
           name: row?.name ?? "",
-          code: row?.code ?? "",
-          status: row?.status ?? 1,
-          remark: row?.remark ?? ""
+          is_active: row?.is_active ?? true,
+          description: row?.description ?? ""
         }
       },
       width: "500px",
@@ -160,21 +152,30 @@ export function useRole() {
   const menuFormRef = ref();
 
   async function handleMenu(row: any) {
-    // 获取所有菜单
-    const { data: menuData } = await getMenuList({});
-    // 转换为树形结构
-    const menuTree = handleTree(menuData);
-    // 获取角色已有菜单
-    const { data: menuIds } = await getRoleMenuIds(row.id);
+    // 获取按菜单分组的权限列表
+    const { data: permissionsData } = await getPermissionsGrouped();
+    // 转换为树形结构（按菜单分组的权限已经是树形结构）
+    const menuTree = permissionsData.map((menu: any) => ({
+      id: `menu_${menu.menu_id}`, // 菜单节点使用特殊前缀避免与权限ID冲突
+      title: menu.menu_title,
+      children:
+        menu.permissions?.map((perm: any) => ({
+          id: perm.id,
+          title: perm.display_name || perm.name
+        })) || []
+    }));
+
+    // 获取角色已有权限
+    const { data: permissionIds } = await getRoleMenuIds(row.id);
 
     addDialog({
-      title: `菜单权限（${row.name}）`,
+      title: `权限设置（${row.display_name}）`,
       props: {
         formInline: {
           roleId: row.id,
-          roleName: row.name,
+          roleName: row.display_name,
           menuOptions: menuTree || [],
-          menuIds: menuIds || []
+          menuIds: permissionIds || []
         } as MenuFormItemProps
       },
       width: "500px",
@@ -188,7 +189,7 @@ export function useRole() {
           roleId: row.id,
           menuIds: checkedMenuIds
         });
-        message("分配菜单权限成功", { type: "success" });
+        message("分配权限成功", { type: "success" });
         done();
       }
     });

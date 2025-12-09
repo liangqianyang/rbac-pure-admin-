@@ -38,7 +38,7 @@ watch(
         <el-option
           v-for="item in newFormInline.roleOptions"
           :key="item.id"
-          :label="item.name"
+          :label="item.displayName || item.name"
           :value="item.id"
         />
       </el-select>

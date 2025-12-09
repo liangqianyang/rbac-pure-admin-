@@ -6,10 +6,10 @@ import type { FormProps } from "./utils/types";
 const props = withDefaults(defineProps<FormProps>(), {
   formInline: () => ({
     isAdd: true,
+    display_name: "",
     name: "",
-    code: "",
-    status: 1,
-    remark: ""
+    is_active: true,
+    description: ""
   })
 });
 
@@ -37,36 +37,36 @@ defineExpose({ getRef });
     :rules="formRules"
     label-width="100px"
   >
-    <el-form-item label="角色名称" prop="name">
+    <el-form-item label="角色标识" prop="name">
       <el-input
         v-model="newFormInline.name"
-        clearable
-        placeholder="请输入角色名称"
-      />
-    </el-form-item>
-    <el-form-item label="角色标识" prop="code">
-      <el-input
-        v-model="newFormInline.code"
         clearable
         placeholder="请输入角色标识"
       />
     </el-form-item>
+    <el-form-item label="角色名称" prop="display_name">
+      <el-input
+        v-model="newFormInline.display_name"
+        clearable
+        placeholder="请输入角色名称"
+      />
+    </el-form-item>
     <el-form-item label="状态">
       <el-switch
-        v-model="newFormInline.status"
+        v-model="newFormInline.is_active"
         inline-prompt
-        :active-value="1"
-        :inactive-value="0"
+        :active-value="true"
+        :inactive-value="false"
         active-text="启用"
         inactive-text="停用"
       />
     </el-form-item>
-    <el-form-item label="备注">
+    <el-form-item label="描述">
       <el-input
-        v-model="newFormInline.remark"
+        v-model="newFormInline.description"
         type="textarea"
         :rows="3"
-        placeholder="请输入备注信息"
+        placeholder="请输入角色描述"
       />
     </el-form-item>
   </el-form>

@@ -5,21 +5,19 @@ import {
   addPermission,
   updatePermission,
   deletePermission,
-  getMenuList
+  getMenuOptions
 } from "@/api/system";
 import { ElMessageBox } from "element-plus";
 import type { PaginationProps } from "@pureadmin/table";
-import { reactive, ref, onMounted, h, toRaw } from "vue";
+import { reactive, ref, onMounted, h } from "vue";
 import type { FormItemProps } from "./types";
 import editForm from "../form.vue";
 import { addDialog } from "@/components/ReDialog";
 
 export function usePermission() {
   const form = reactive({
-    name: "",
-    displayName: "",
-    resource: "",
-    menuId: "",
+    search: "",
+    menuId: undefined as number | undefined,
     isActive: ""
   });
   const dataList = ref([]);
@@ -68,12 +66,8 @@ export function usePermission() {
     },
     {
       label: "所属菜单",
-      prop: "menuId",
-      minWidth: 120,
-      cellRenderer: ({ row }) => {
-        const menu = findMenuById(row.menuId);
-        return <span>{menu ? menu.title : "-"}</span>;
-      }
+      prop: "menuName",
+      minWidth: 120
     },
     {
       label: "状态",
@@ -84,11 +78,6 @@ export function usePermission() {
           {row.isActive === 1 ? "已激活" : "已停用"}
         </el-tag>
       )
-    },
-    {
-      label: "排序",
-      prop: "sort",
-      width: 80
     },
     {
       label: "创建时间",
@@ -105,34 +94,42 @@ export function usePermission() {
     }
   ];
 
-  // 根据ID查找菜单
-  function findMenuById(menuId: number) {
-    if (!menuId) return null;
-    return menuOptions.value.find(item => item.id === menuId);
-  }
-
   function handleSelectionChange(val: any[]) {
     selectedIds.value = val.map(item => item.id);
   }
 
   async function loadMenuOptions() {
-    const { data } = await getMenuList({});
-    // 只获取菜单类型（非按钮）
-    menuOptions.value = data.filter((item: any) => item.menuType !== 3);
+    menuOptions.value = await getMenuOptions();
+  }
+
+  // 根据菜单ID获取菜单标题
+  function getMenuTitle(menuId: number | undefined): string {
+    if (!menuId) return "-";
+    const menu = menuOptions.value.find(item => item.id === menuId);
+    return menu?.title || "-";
   }
 
   async function onSearch() {
     loading.value = true;
-    const { data } = await getPermissionList(
-      toRaw({
-        ...form,
-        currentPage: pagination.currentPage,
-        pageSize: pagination.pageSize
-      })
-    );
-    dataList.value = data.list;
-    pagination.total = data.total;
-    loading.value = false;
+    try {
+      const { data } = await getPermissionList({
+        search: form.search || undefined,
+        menu_id: form.menuId || undefined,
+        is_active: form.isActive !== "" ? form.isActive : undefined,
+        page: pagination.currentPage,
+        per_page: pagination.pageSize
+      });
+      // 根据 menuOptions 设置菜单标题
+      dataList.value = data.list.map(item => ({
+        ...item,
+        menuName: getMenuTitle(item.menuId)
+      }));
+      pagination.total = data.total;
+    } catch (error) {
+      console.error("获取权限列表失败:", error);
+    } finally {
+      loading.value = false;
+    }
   }
 
   function resetForm(formEl: any) {
@@ -149,14 +146,13 @@ export function usePermission() {
       props: {
         formInline: {
           id: row?.id ?? undefined,
-          menuId: row?.menuId ?? undefined,
           name: row?.name ?? "",
           displayName: row?.displayName ?? "",
           description: row?.description ?? "",
           resource: row?.resource ?? "",
           action: row?.action ?? "",
           isActive: row?.isActive ?? 1,
-          sort: row?.sort ?? 0
+          menuId: row?.menuId ?? undefined
         },
         menuOptions: menuOptions.value
       },
@@ -180,7 +176,10 @@ export function usePermission() {
                 message(res.message || "新增失败", { type: "error" });
               }
             } else {
-              const res = await updatePermission(curData);
+              const res = await updatePermission({
+                ...curData,
+                id: curData.id!
+              });
               if (res.success) {
                 message("修改成功", { type: "success" });
                 done();
@@ -196,25 +195,23 @@ export function usePermission() {
   }
 
   async function handleDelete(row?: any) {
-    const ids = row ? [row.id] : selectedIds.value;
-    if (ids.length === 0) {
+    const id = row?.id;
+    if (!id) {
       message("请选择要删除的数据", { type: "warning" });
       return;
     }
-    ElMessageBox.confirm(
-      row
-        ? `确认删除权限【${row.displayName}】吗?`
-        : `确认删除选中的 ${ids.length} 条数据吗?`,
-      "提示",
-      {
-        confirmButtonText: "确定",
-        cancelButtonText: "取消",
-        type: "warning"
+    ElMessageBox.confirm(`确认删除权限【${row.displayName}】吗?`, "提示", {
+      confirmButtonText: "确定",
+      cancelButtonText: "取消",
+      type: "warning"
+    }).then(async () => {
+      const res = await deletePermission(id);
+      if (res.success) {
+        message("删除成功", { type: "success" });
+        onSearch();
+      } else {
+        message(res.message || "删除失败", { type: "error" });
       }
-    ).then(async () => {
-      await deletePermission(ids);
-      message("删除成功", { type: "success" });
-      onSearch();
     });
   }
 

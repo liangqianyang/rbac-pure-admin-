@@ -1,8 +1,6 @@
 // 权限表单项
 interface FormItemProps {
   id?: number;
-  /** 关联菜单ID */
-  menuId?: number;
   /** 权限名称（标识） */
   name: string;
   /** 显示名称 */
@@ -15,8 +13,8 @@ interface FormItemProps {
   action: string;
   /** 是否激活 0-否 1-是 */
   isActive: number;
-  /** 排序 */
-  sort: number;
+  /** 关联菜单ID */
+  menuId?: number;
 }
 
 interface FormProps {

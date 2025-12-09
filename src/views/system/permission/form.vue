@@ -6,14 +6,13 @@ import type { FormProps } from "./utils/types";
 const props = withDefaults(defineProps<FormProps>(), {
   formInline: () => ({
     id: undefined,
-    menuId: undefined,
     name: "",
     displayName: "",
     description: "",
     resource: "",
     action: "",
     isActive: 1,
-    sort: 0
+    menuId: undefined
   }),
   menuOptions: () => []
 });
@@ -76,7 +75,6 @@ defineExpose({ getRef });
         <el-form-item label="所属菜单" prop="menuId">
           <el-select
             v-model="newFormInline.menuId"
-            clearable
             filterable
             placeholder="请选择所属菜单"
             class="w-full"
@@ -96,16 +94,6 @@ defineExpose({ getRef });
             <el-radio :value="1">激活</el-radio>
             <el-radio :value="0">停用</el-radio>
           </el-radio-group>
-        </el-form-item>
-      </el-col>
-      <el-col :span="12">
-        <el-form-item label="排序" prop="sort">
-          <el-input-number
-            v-model="newFormInline.sort"
-            :min="0"
-            :max="9999"
-            controls-position="right"
-          />
         </el-form-item>
       </el-col>
       <el-col :span="24">

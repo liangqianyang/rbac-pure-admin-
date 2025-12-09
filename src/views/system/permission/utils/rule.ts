@@ -8,5 +8,6 @@ export const formRules = reactive(<FormRules>{
     { required: true, message: "显示名称为必填项", trigger: "blur" }
   ],
   resource: [{ required: true, message: "资源名称为必填项", trigger: "blur" }],
-  action: [{ required: true, message: "动作名称为必填项", trigger: "blur" }]
+  action: [{ required: true, message: "动作名称为必填项", trigger: "blur" }],
+  menuId: [{ required: true, message: "所属菜单为必填项", trigger: "change" }]
 });

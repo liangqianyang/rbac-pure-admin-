@@ -6,7 +6,7 @@ interface FormItemProps extends RoleItem {
 }
 
 interface FormProps {
-  formInline: FormItemProps;
+  formInline?: FormItemProps;
 }
 
 interface MenuFormItemProps {
@@ -19,7 +19,7 @@ interface MenuFormItemProps {
 }
 
 interface MenuFormProps {
-  formInline: MenuFormItemProps;
+  formInline?: MenuFormItemProps;
 }
 
 export type { FormItemProps, FormProps, MenuFormItemProps, MenuFormProps };

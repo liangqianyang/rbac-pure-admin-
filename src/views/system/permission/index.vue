@@ -43,34 +43,18 @@ const {
       :model="form"
       class="search-form bg-bg_color w-[99/100] pl-8 pt-[12px] overflow-auto"
     >
-      <el-form-item label="权限标识：" prop="name">
+      <el-form-item label="关键词：" prop="search">
         <el-input
-          v-model="form.name"
-          placeholder="请输入权限标识"
+          v-model="form.search"
+          placeholder="请输入权限标识或名称"
           clearable
-          class="!w-[180px]"
-        />
-      </el-form-item>
-      <el-form-item label="显示名称：" prop="displayName">
-        <el-input
-          v-model="form.displayName"
-          placeholder="请输入显示名称"
-          clearable
-          class="!w-[180px]"
-        />
-      </el-form-item>
-      <el-form-item label="资源名称：" prop="resource">
-        <el-input
-          v-model="form.resource"
-          placeholder="请输入资源名称"
-          clearable
-          class="!w-[180px]"
+          class="!w-[200px]"
         />
       </el-form-item>
       <el-form-item label="所属菜单：" prop="menuId">
         <el-select
           v-model="form.menuId"
-          placeholder="请选择"
+          placeholder="请选择菜单"
           clearable
           filterable
           class="!w-[180px]"
@@ -88,10 +72,10 @@ const {
           v-model="form.isActive"
           placeholder="请选择"
           clearable
-          class="!w-[180px]"
+          class="!w-[120px]"
         >
-          <el-option label="已激活" :value="1" />
-          <el-option label="已停用" :value="0" />
+          <el-option label="已激活" value="1" />
+          <el-option label="已停用" value="0" />
         </el-select>
       </el-form-item>
       <el-form-item>

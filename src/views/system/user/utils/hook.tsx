@@ -21,8 +21,9 @@ import { addDialog } from "@/components/ReDialog";
 export function useUser() {
   const form = reactive({
     username: "",
+    email: "",
     phone: "",
-    status: ""
+    status: "" as string | number
   });
   const dataList = ref([]);
   const loading = ref(true);
@@ -35,6 +36,15 @@ export function useUser() {
     background: true
   });
 
+  // 头像预览状态
+  const previewVisible = ref(false);
+  const previewUrl = ref("");
+
+  function handlePreview(url: string) {
+    previewUrl.value = url;
+    previewVisible.value = true;
+  }
+
   const columns: TableColumnList = [
     {
       type: "selection",
@@ -43,47 +53,44 @@ export function useUser() {
       reserveSelection: true
     },
     {
-      label: "用户编号",
+      label: "ID",
       prop: "id",
-      width: 100
+      width: 80
     },
     {
-      label: "用户头像",
+      label: "头像",
       prop: "avatar",
-      width: 100,
+      width: 80,
       cellRenderer: ({ row }) => (
-        <el-avatar size={32} src={row.avatar}>
+        <el-avatar
+          size={36}
+          src={row.avatar}
+          style="cursor: pointer"
+          onClick={() => row.avatar && handlePreview(row.avatar)}
+        >
           {row.nickname?.charAt(0) || row.username?.charAt(0)}
         </el-avatar>
       )
     },
     {
-      label: "用户名称",
+      label: "用户名",
       prop: "username",
-      minWidth: 120
+      minWidth: 100
     },
     {
-      label: "用户昵称",
+      label: "昵称",
       prop: "nickname",
-      minWidth: 120
+      minWidth: 100
     },
     {
-      label: "性别",
-      prop: "sex",
-      width: 80,
-      cellRenderer: ({ row }) => (
-        <el-tag type={row.sex === 1 ? "primary" : "danger"}>
-          {row.sex === 1 ? "男" : "女"}
-        </el-tag>
-      )
+      label: "邮箱",
+      prop: "email",
+      minWidth: 160
     },
     {
-      label: "手机号码",
+      label: "手机号",
       prop: "phone",
-      minWidth: 120,
-      formatter: ({ phone }) => {
-        return phone?.replace(/(\d{3})\d{4}(\d{4})/, "$1****$2") || "";
-      }
+      minWidth: 120
     },
     {
       label: "状态",
@@ -147,21 +154,25 @@ export function useUser() {
         formInline: {
           isAdd: title === "新增",
           id: row?.id ?? undefined,
-          nickname: row?.nickname ?? "",
           username: row?.username ?? "",
-          password: "",
-          phone: row?.phone ?? "",
+          nickname: row?.nickname ?? "",
           email: row?.email ?? "",
-          sex: row?.sex ?? 1,
-          status: row?.status ?? 1,
-          remark: row?.remark ?? ""
+          phone: row?.phone ?? "",
+          sex: (row as any)?.gender ?? 0,
+          avatar: row?.avatar ?? "",
+          password: "",
+          status: row?.status ?? 1
         }
       },
       width: "46%",
       draggable: true,
       fullscreenIcon: true,
       closeOnClickModal: false,
-      contentRenderer: () => h(editForm, { ref: formRef }),
+      contentRenderer: ({ options }) =>
+        h(editForm, {
+          ref: formRef,
+          formInline: options.props.formInline
+        }),
       beforeSure: (done, { options }) => {
         const FormRef = formRef.value.getRef();
         const curData = options.props.formInline as FormItemProps;
@@ -273,6 +284,8 @@ export function useUser() {
     dataList,
     pagination,
     selectedIds,
+    previewVisible,
+    previewUrl,
     onSearch,
     resetForm,
     openDialog,

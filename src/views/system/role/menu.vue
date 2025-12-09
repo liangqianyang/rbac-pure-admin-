@@ -14,8 +14,8 @@ const props = withDefaults(defineProps<MenuFormProps>(), {
 const treeRef = ref();
 const newFormInline = ref(props.formInline);
 const searchValue = ref("");
-const isExpand = ref(false);
-const isSelectAll = ref(false);
+const isExpand = ref(true);
+const isSelectAll = ref(true);
 const isLinkage = ref(true);
 
 // 过滤菜单树
@@ -48,29 +48,27 @@ watch(
 );
 
 // 展开/折叠
-function toggleExpand() {
-  isExpand.value = !isExpand.value;
+function toggleExpand(val: boolean) {
   const nodes = treeRef.value?.store?.nodesMap || {};
   for (const key in nodes) {
-    nodes[key].expanded = isExpand.value;
+    nodes[key].expanded = val;
   }
 }
 
 // 全选/全不选
-function toggleSelectAll() {
-  isSelectAll.value = !isSelectAll.value;
-  if (isSelectAll.value) {
+function toggleSelectAll(val: boolean) {
+  if (val) {
     treeRef.value?.setCheckedNodes(newFormInline.value.menuOptions);
   } else {
     treeRef.value?.setCheckedKeys([]);
   }
 }
 
-// 获取选中的菜单IDs
+// 获取选中的权限IDs（过滤掉菜单节点，只返回权限ID）
 function getCheckedMenuIds() {
   const checkedKeys = treeRef.value?.getCheckedKeys() || [];
-  const halfCheckedKeys = treeRef.value?.getHalfCheckedKeys() || [];
-  return [...checkedKeys, ...halfCheckedKeys];
+  // 只返回数字类型的ID（权限ID），过滤掉 menu_ 前缀的菜单节点ID
+  return checkedKeys.filter((id: any) => typeof id === "number");
 }
 
 defineExpose({ getCheckedMenuIds });
