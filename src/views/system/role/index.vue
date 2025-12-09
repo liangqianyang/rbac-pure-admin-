@@ -41,14 +41,14 @@ const {
       ref="formRef"
       :inline="true"
       :model="form"
-      class="search-form bg-bg_color w-[99/100] pl-8 pt-[12px] overflow-auto"
+      class="search-form bg-bg_color w-[99/100] pl-8 pt-3 overflow-auto"
     >
       <el-form-item label="搜索：" prop="search">
         <el-input
           v-model="form.search"
           placeholder="请输入角色名称或标识"
           clearable
-          class="!w-[200px]"
+          class="w-[200px]!"
         />
       </el-form-item>
       <el-form-item label="状态：" prop="is_active">
@@ -56,7 +56,7 @@ const {
           v-model="form.is_active"
           placeholder="请选择状态"
           clearable
-          class="!w-[150px]"
+          class="w-[150px]!"
         >
           <el-option label="已启用" :value="true" />
           <el-option label="已停用" :value="false" />

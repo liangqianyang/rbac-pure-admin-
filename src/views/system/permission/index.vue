@@ -41,14 +41,14 @@ const {
       ref="formRef"
       :inline="true"
       :model="form"
-      class="search-form bg-bg_color w-[99/100] pl-8 pt-[12px] overflow-auto"
+      class="search-form bg-bg_color w-[99/100] pl-8 pt-3 overflow-auto"
     >
       <el-form-item label="关键词：" prop="search">
         <el-input
           v-model="form.search"
           placeholder="请输入权限标识或名称"
           clearable
-          class="!w-[200px]"
+          class="w-[200px]!"
         />
       </el-form-item>
       <el-form-item label="所属菜单：" prop="menuId">
@@ -57,7 +57,7 @@ const {
           placeholder="请选择菜单"
           clearable
           filterable
-          class="!w-[180px]"
+          class="w-[180px]!"
         >
           <el-option
             v-for="item in menuOptions"
@@ -72,7 +72,7 @@ const {
           v-model="form.isActive"
           placeholder="请选择"
           clearable
-          class="!w-[120px]"
+          class="w-[120px]!"
         >
           <el-option label="已激活" value="1" />
           <el-option label="已停用" value="0" />

@@ -134,7 +134,7 @@ defineExpose({ getRef });
             :min="0"
             :max="9999"
             controls-position="right"
-            class="!w-full"
+            class="w-full!"
           />
         </el-form-item>
       </el-col>
@@ -181,7 +181,7 @@ defineExpose({ getRef });
               :min="0"
               :max="9999"
               controls-position="right"
-              class="!w-full"
+              class="w-full!"
             />
           </el-form-item>
         </el-col>
@@ -336,7 +336,7 @@ defineExpose({ getRef });
               :min="0"
               :max="9999"
               controls-position="right"
-              class="!w-full"
+              class="w-full!"
             />
           </el-form-item>
         </el-col>
@@ -491,7 +491,7 @@ defineExpose({ getRef });
               :min="0"
               :max="9999"
               controls-position="right"
-              class="!w-full"
+              class="w-full!"
             />
           </el-form-item>
         </el-col>
