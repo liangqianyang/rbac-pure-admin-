@@ -4,12 +4,11 @@ import { usePermission } from "./utils/hook";
 import { PureTableBar } from "@/components/RePureTableBar";
 import { useRenderIcon } from "@/components/ReIcon/src/hooks";
 
-// 图标导入
-const Search = () => import("~icons/ep/search");
-const Refresh = () => import("~icons/ep/refresh");
-const Delete = () => import("~icons/ep/delete");
-const EditPen = () => import("~icons/ep/edit-pen");
-const AddFill = () => import("~icons/ri/add-circle-line");
+import Search from "~icons/ep/search";
+import Refresh from "~icons/ep/refresh";
+import Delete from "~icons/ep/delete";
+import EditPen from "~icons/ep/edit-pen";
+import AddFill from "~icons/ri/add-circle-line";
 
 defineOptions({
   name: "SystemPermission"
@@ -102,14 +101,6 @@ const {
           @click="openDialog()"
         >
           新增权限
-        </el-button>
-        <el-button
-          type="danger"
-          :icon="useRenderIcon(Delete)"
-          :disabled="selectedIds.length === 0"
-          @click="handleDelete()"
-        >
-          批量删除
         </el-button>
       </template>
       <template v-slot="{ size, dynamicColumns }">

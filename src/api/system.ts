@@ -404,7 +404,9 @@ export const deleteRole = (ids: number[]) => {
 export const getRoleMenuIds = async (roleId: number): Promise<Result> => {
   const response = await http.request<any>("get", `/api/roles/${roleId}`);
   // 返回角色已有的权限ID列表
-  const permissionIds = response.data?.permissions?.map((p: any) => p.id) || [];
+  // 后端可能返回 response.permissions 或 response.data.permissions
+  const permissions = response.permissions || response.data?.permissions || [];
+  const permissionIds = permissions.map((p: any) => p.id);
   return {
     success: true,
     data: permissionIds
@@ -434,26 +436,185 @@ export const assignRoleMenus = async (data: {
 
 // ==================== 菜单管理 API ====================
 
+/** 后端菜单列表响应 */
+interface BackendMenuListResponse {
+  data: Array<{
+    id: number;
+    parent_id: number;
+    menu_type: number;
+    title: string;
+    name: string;
+    path: string;
+    component?: string;
+    redirect?: string;
+    icon?: string;
+    extra_icon?: string;
+    enter_transition?: string;
+    leave_transition?: string;
+    frame_src?: string;
+    frame_loading?: boolean;
+    rank: number;
+    show_link: boolean;
+    show_parent: boolean;
+    keep_alive: boolean;
+    hidden_tag: boolean;
+    fixed_tag: boolean;
+    active_path?: string;
+    is_active: boolean;
+    created_at: string;
+    updated_at: string;
+    children?: any[];
+  }>;
+  meta?: {
+    current_page: number;
+    per_page: number;
+    total: number;
+  };
+}
+
 /** 获取菜单列表 */
-export const getMenuList = (data?: object) => {
-  return http.request<Result>("post", "/api/system/menu/list", { data });
+export const getMenuList = async (data?: {
+  title?: string;
+  search?: string;
+  menu_type?: number;
+}): Promise<Result> => {
+  try {
+    const params: Record<string, any> = {
+      per_page: 100 // 菜单一般不多，一次性获取全部
+    };
+    if (data?.title) params.search = data.title;
+    if (data?.search) params.search = data.search;
+    if (data?.menu_type !== undefined) params.menu_type = data.menu_type;
+
+    const response = await http.request<BackendMenuListResponse>(
+      "get",
+      "/api/menus",
+      { params }
+    );
+
+    // 转换后端数据格式为前端格式
+    const list = response.data.map(item => ({
+      id: item.id,
+      parentId: item.parent_id,
+      menuType: item.menu_type,
+      title: item.title,
+      name: item.name,
+      path: item.path,
+      component: item.component || "",
+      redirect: item.redirect || "",
+      icon: item.icon || "",
+      extraIcon: item.extra_icon || "",
+      enterTransition: item.enter_transition || "",
+      leaveTransition: item.leave_transition || "",
+      frameSrc: item.frame_src || "",
+      frameLoading: item.frame_loading ?? true,
+      sort: item.rank,
+      showLink: item.show_link,
+      showParent: item.show_parent,
+      keepAlive: item.keep_alive,
+      hiddenTag: item.hidden_tag,
+      fixedTag: item.fixed_tag,
+      activePath: item.active_path || "",
+      status: item.is_active ? 1 : 0,
+      createTime: item.created_at,
+      children: item.children || []
+    }));
+
+    return { success: true, data: list };
+  } catch (error) {
+    console.error("获取菜单列表失败:", error);
+    return { success: false, data: [] };
+  }
 };
 
 /** 新增菜单 */
-export const addMenu = (data: MenuItem) => {
-  return http.request<Result>("post", "/api/system/menu/add", { data });
+export const addMenu = async (data: MenuItem): Promise<Result> => {
+  try {
+    await http.request("post", "/api/menus", {
+      data: {
+        parent_id: data.parentId || 0,
+        menu_type: data.menuType ?? 0,
+        title: data.title,
+        name: data.name,
+        path: data.path,
+        component: data.component || null,
+        redirect: data.redirect || null,
+        icon: data.icon || null,
+        extra_icon: data.extraIcon || null,
+        enter_transition: data.enterTransition || null,
+        leave_transition: data.leaveTransition || null,
+        frame_src: data.frameSrc || null,
+        frame_loading: data.frameLoading ?? true,
+        rank: data.sort ?? 99,
+        show_link: data.showLink ?? true,
+        show_parent: data.showParent ?? true,
+        keep_alive: data.keepAlive ?? false,
+        hidden_tag: data.hiddenTag ?? false,
+        fixed_tag: data.fixedTag ?? false,
+        active_path: data.activePath || null,
+        is_active: data.status === 1
+      }
+    });
+    return { success: true, message: "创建成功" };
+  } catch (error: any) {
+    console.error("新增菜单失败:", error);
+    return {
+      success: false,
+      message: error?.response?.data?.message || "创建失败"
+    };
+  }
 };
 
 /** 修改菜单 */
-export const updateMenu = (data: MenuItem) => {
-  return http.request<Result>("put", "/api/system/menu/update", { data });
+export const updateMenu = async (data: MenuItem): Promise<Result> => {
+  try {
+    await http.request("put", `/api/menus/${data.id}`, {
+      data: {
+        parent_id: data.parentId || 0,
+        menu_type: data.menuType ?? 0,
+        title: data.title,
+        name: data.name,
+        path: data.path,
+        component: data.component || null,
+        redirect: data.redirect || null,
+        icon: data.icon || null,
+        extra_icon: data.extraIcon || null,
+        enter_transition: data.enterTransition || null,
+        leave_transition: data.leaveTransition || null,
+        frame_src: data.frameSrc || null,
+        frame_loading: data.frameLoading ?? true,
+        rank: data.sort ?? 99,
+        show_link: data.showLink ?? true,
+        show_parent: data.showParent ?? true,
+        keep_alive: data.keepAlive ?? false,
+        hidden_tag: data.hiddenTag ?? false,
+        fixed_tag: data.fixedTag ?? false,
+        active_path: data.activePath || null,
+        is_active: data.status === 1
+      }
+    });
+    return { success: true, message: "更新成功" };
+  } catch (error: any) {
+    console.error("修改菜单失败:", error);
+    return {
+      success: false,
+      message: error?.response?.data?.message || "更新失败"
+    };
+  }
 };
 
 /** 删除菜单 */
-export const deleteMenu = (id: number) => {
-  return http.request<Result>("delete", "/api/system/menu/delete", {
-    data: { id }
-  });
+export const deleteMenu = async (id: number): Promise<Result> => {
+  try {
+    await http.request("delete", `/api/menus/${id}`);
+    return { success: true, message: "删除成功" };
+  } catch (error: any) {
+    console.error("删除菜单失败:", error);
+    return {
+      success: false,
+      message: error?.response?.data?.message || "删除失败"
+    };
+  }
 };
 
 /** 获取菜单选项（用于下拉选择） */

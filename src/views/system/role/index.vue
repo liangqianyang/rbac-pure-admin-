@@ -4,13 +4,12 @@ import { useRole } from "./utils/hook";
 import { PureTableBar } from "@/components/RePureTableBar";
 import { useRenderIcon } from "@/components/ReIcon/src/hooks";
 
-// 图标导入
-const Search = () => import("~icons/ep/search");
-const Refresh = () => import("~icons/ep/refresh");
-const Delete = () => import("~icons/ep/delete");
-const EditPen = () => import("~icons/ep/edit-pen");
-const AddFill = () => import("~icons/ri/add-circle-line");
-const Menu = () => import("~icons/ep/menu");
+import Search from "~icons/ep/search";
+import Refresh from "~icons/ep/refresh";
+import Delete from "~icons/ep/delete";
+import EditPen from "~icons/ep/edit-pen";
+import AddFill from "~icons/ri/add-circle-line";
+import Menu from "~icons/ep/menu";
 
 defineOptions({
   name: "SystemRole"
@@ -22,6 +21,7 @@ const tableRef = ref();
 const {
   form,
   loading,
+  menuLoading,
   columns,
   dataList,
   pagination,
@@ -138,6 +138,7 @@ const {
               type="primary"
               :size="size"
               :icon="useRenderIcon(Menu)"
+              :loading="menuLoading"
               @click="handleMenu(row)"
             >
               权限

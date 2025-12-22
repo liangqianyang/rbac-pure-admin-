@@ -10,6 +10,23 @@ import {
   formatFlatteningRoutes
 } from "../utils";
 import { useMultiTagsStoreHook } from "./multiTags";
+import { cloneDeep } from "@pureadmin/utils";
+
+/** 清理路由对象中的额外字段 */
+function cleanRouteFields(routes: any[]): any[] {
+  if (!routes || !routes.length) return routes;
+  return routes.map(route => {
+    const cleaned = { ...route };
+    // 删除 buildHierarchyTree 添加的字段
+    delete cleaned.id;
+    delete cleaned.parentId;
+    delete cleaned.pathList;
+    if (cleaned.children && cleaned.children.length) {
+      cleaned.children = cleanRouteFields(cleaned.children);
+    }
+    return cleaned;
+  });
+}
 
 export const usePermissionStore = defineStore("pure-permission", {
   state: () => ({
@@ -25,11 +42,17 @@ export const usePermissionStore = defineStore("pure-permission", {
   actions: {
     /** 组装整体路由生成的菜单 */
     handleWholeMenus(routes: any[]) {
+      // 克隆并清理路由数据，避免污染原始数据
+      const cleanedRoutes = cleanRouteFields(cloneDeep(routes));
+      const cleanedConstantMenus = cleanRouteFields(
+        cloneDeep(this.constantMenus)
+      );
+
       this.wholeMenus = filterNoPermissionTree(
-        filterTree(ascending(this.constantMenus.concat(routes)))
+        filterTree(ascending(cleanedConstantMenus.concat(cleanedRoutes)))
       );
       this.flatteningRoutes = formatFlatteningRoutes(
-        this.constantMenus.concat(routes) as any
+        cloneDeep(this.constantMenus).concat(cloneDeep(routes)) as any
       );
     },
     /** 监听缓存页面是否存在于标签页，不存在则删除 */

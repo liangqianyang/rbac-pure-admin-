@@ -209,19 +209,37 @@ function initRouter() {
       });
     } else {
       return new Promise(resolve => {
-        getAsyncRoutes().then(({ data }) => {
-          handleAsyncRoutes(cloneDeep(data));
-          storageLocal().setItem(key, data);
-          resolve(router);
-        });
+        getAsyncRoutes()
+          .then(({ success, data }) => {
+            if (success && data) {
+              handleAsyncRoutes(cloneDeep(data));
+              storageLocal().setItem(key, data);
+            } else {
+              handleAsyncRoutes([]);
+            }
+            resolve(router);
+          })
+          .catch(() => {
+            handleAsyncRoutes([]);
+            resolve(router);
+          });
       });
     }
   } else {
     return new Promise(resolve => {
-      getAsyncRoutes().then(({ data }) => {
-        handleAsyncRoutes(cloneDeep(data));
-        resolve(router);
-      });
+      getAsyncRoutes()
+        .then(({ success, data }) => {
+          if (success && data) {
+            handleAsyncRoutes(cloneDeep(data));
+          } else {
+            handleAsyncRoutes([]);
+          }
+          resolve(router);
+        })
+        .catch(() => {
+          handleAsyncRoutes([]);
+          resolve(router);
+        });
     });
   }
 }
@@ -307,26 +325,68 @@ function handleAliveRoute({ name }: ToRouteType, mode?: string) {
 
 /** 过滤后端传来的动态路由 重新生成规范路由 */
 function addAsyncRoutes(arrRoutes: Array<RouteRecordRaw>) {
-  if (!arrRoutes || !arrRoutes.length) return;
+  if (!arrRoutes || !arrRoutes.length) return [];
   const modulesRoutesKeys = Object.keys(modulesRoutes);
-  arrRoutes.forEach((v: RouteRecordRaw) => {
+  arrRoutes.forEach((v: any) => {
+    // 删除后端返回的额外字段
+    delete v.id;
+    delete v.parentId;
+    delete v.pathList;
+
     // 将backstage属性加入meta，标识此路由为后端返回路由
+    if (!v.meta) v.meta = {};
     v.meta.backstage = true;
-    // 父级的redirect属性取值：如果子级存在且父级的redirect属性不存在，默认取第一个子级的path；如果子级存在且父级的redirect属性存在，取存在的redirect属性，会覆盖默认值
+
+    // 父级的redirect属性取值：如果子级存在且父级的redirect属性不存在，默认取第一个子级的path
     if (v?.children && v.children.length && !v.redirect)
       v.redirect = v.children[0].path;
-    // 父级的name属性取值：如果子级存在且父级的name属性不存在，默认取第一个子级的name；如果子级存在且父级的name属性存在，取存在的name属性，会覆盖默认值（注意：测试中发现父级的name不能和子级name重复，如果重复会造成重定向无效（跳转404），所以这里给父级的name起名的时候后面会自动加上`Parent`，避免重复）
+
+    // 父级的name属性取值
     if (v?.children && v.children.length && !v.name)
       v.name = (v.children[0].name as string) + "Parent";
+
+    // 处理组件
     if (v.meta?.frameSrc) {
       v.component = IFrame;
+    } else if (v?.children && v.children.length) {
+      // 有子路由的父级目录，不需要设置 component（只是菜单容器）
+      // 删除后端可能返回的 component 字段，避免被错误处理
+      delete v.component;
     } else {
-      // 对后端传component组件路径和不传做兼容（如果后端传component组件路径，那么path可以随便写，如果不传，component组件路径会跟path保持一致）
-      const index = v?.component
-        ? modulesRoutesKeys.findIndex(ev => ev.includes(v.component as any))
-        : modulesRoutesKeys.findIndex(ev => ev.includes(v.path));
-      v.component = modulesRoutes[modulesRoutesKeys[index]];
+      // 对后端传component组件路径和不传做兼容
+      const componentPath = v?.component ? String(v.component) : v.path;
+
+      // 尝试多种匹配方式
+      let index = modulesRoutesKeys.findIndex(ev => ev.includes(componentPath));
+
+      // 如果没找到，尝试去掉开头的斜杠再匹配
+      if (index === -1 && componentPath.startsWith("/")) {
+        const pathWithoutSlash = componentPath.slice(1);
+        index = modulesRoutesKeys.findIndex(ev =>
+          ev.includes(pathWithoutSlash)
+        );
+      }
+
+      // 如果还是没找到，尝试加上 views 前缀匹配
+      if (index === -1 && !componentPath.includes("views")) {
+        const pathWithViews = componentPath.startsWith("/")
+          ? componentPath
+          : "/" + componentPath;
+        index = modulesRoutesKeys.findIndex(ev => ev.includes(pathWithViews));
+      }
+
+      if (index !== -1) {
+        v.component = modulesRoutes[modulesRoutesKeys[index]];
+      } else {
+        // 组件未找到时，打印警告
+        console.warn(
+          `[路由警告] 未找到组件: ${componentPath}，路径: ${v.path}`
+        );
+        v.component = undefined;
+      }
     }
+
+    // 递归处理子路由
     if (v?.children && v.children.length) {
       addAsyncRoutes(v.children);
     }

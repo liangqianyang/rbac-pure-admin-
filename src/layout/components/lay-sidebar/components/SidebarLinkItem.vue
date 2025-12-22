@@ -16,8 +16,9 @@ const getLinkProps = (item: menuType) => {
       rel: "noopener"
     };
   }
+  // 只传递必要的路由信息，避免传递整个路由对象
   return {
-    to: item
+    to: item.path || item.redirect
   };
 };
 </script>

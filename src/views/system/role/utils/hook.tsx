@@ -24,6 +24,7 @@ export function useRole() {
   });
   const dataList = ref([]);
   const loading = ref(true);
+  const menuLoading = ref(false); // 权限按钮加载状态
   const selectedIds = ref<number[]>([]);
 
   const pagination = reactive<PaginationProps>({
@@ -152,47 +153,55 @@ export function useRole() {
   const menuFormRef = ref();
 
   async function handleMenu(row: any) {
-    // 获取按菜单分组的权限列表
-    const { data: permissionsData } = await getPermissionsGrouped();
-    // 转换为树形结构（按菜单分组的权限已经是树形结构）
-    const menuTree = permissionsData.map((menu: any) => ({
-      id: `menu_${menu.menu_id}`, // 菜单节点使用特殊前缀避免与权限ID冲突
-      title: menu.menu_title,
-      children:
-        menu.permissions?.map((perm: any) => ({
-          id: perm.id,
-          title: perm.display_name || perm.name
-        })) || []
-    }));
+    // 防止重复点击
+    if (menuLoading.value) return;
+    menuLoading.value = true;
 
-    // 获取角色已有权限
-    const { data: permissionIds } = await getRoleMenuIds(row.id);
+    try {
+      // 获取按菜单分组的权限列表
+      const { data: permissionsData } = await getPermissionsGrouped();
+      // 转换为树形结构（按菜单分组的权限已经是树形结构）
+      const menuTree = permissionsData.map((menu: any) => ({
+        id: `menu_${menu.menu_id}`, // 菜单节点使用特殊前缀避免与权限ID冲突
+        title: menu.menu_title,
+        children:
+          menu.permissions?.map((perm: any) => ({
+            id: perm.id,
+            title: perm.display_name || perm.name
+          })) || []
+      }));
 
-    addDialog({
-      title: `权限设置（${row.display_name}）`,
-      props: {
-        formInline: {
-          roleId: row.id,
-          roleName: row.display_name,
-          menuOptions: menuTree || [],
-          menuIds: permissionIds || []
-        } as MenuFormItemProps
-      },
-      width: "500px",
-      draggable: true,
-      fullscreenIcon: true,
-      closeOnClickModal: false,
-      contentRenderer: () => h(menuForm, { ref: menuFormRef }),
-      beforeSure: async done => {
-        const checkedMenuIds = menuFormRef.value.getCheckedMenuIds();
-        await assignRoleMenus({
-          roleId: row.id,
-          menuIds: checkedMenuIds
-        });
-        message("分配权限成功", { type: "success" });
-        done();
-      }
-    });
+      // 获取角色已有权限
+      const { data: permissionIds } = await getRoleMenuIds(row.id);
+
+      addDialog({
+        title: `权限设置（${row.display_name}）`,
+        props: {
+          formInline: {
+            roleId: row.id,
+            roleName: row.display_name,
+            menuOptions: menuTree || [],
+            menuIds: permissionIds || []
+          } as MenuFormItemProps
+        },
+        width: "500px",
+        draggable: true,
+        fullscreenIcon: true,
+        closeOnClickModal: false,
+        contentRenderer: () => h(menuForm, { ref: menuFormRef }),
+        beforeSure: async done => {
+          const checkedMenuIds = menuFormRef.value.getCheckedMenuIds();
+          await assignRoleMenus({
+            roleId: row.id,
+            menuIds: checkedMenuIds
+          });
+          message("分配权限成功", { type: "success" });
+          done();
+        }
+      });
+    } finally {
+      menuLoading.value = false;
+    }
   }
 
   async function handleDelete(row?: any) {
@@ -232,6 +241,7 @@ export function useRole() {
   return {
     form,
     loading,
+    menuLoading,
     columns,
     dataList,
     pagination,
